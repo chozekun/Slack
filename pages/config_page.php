@@ -63,12 +63,12 @@ print_manage_menu( 'manage_plugin_page.php' );
       </td>
       <td colspan="2">
         <p>
-          Specifies the mapping between Mantis project names and Slack webhooks.
+          <?php echo plugin_lang_get( 'url_webhooks_description' )?>
         </p>
         <p>
-          Option name is <strong>plugin_Slack_url_webhooks</strong> and is an array of 'Mantis project name' => 'Slack webhook'.
-          Array options must be set using the <a href="adm_config_report.php">Configuration Report</a> screen.
-          The current value of this option is:<pre><?php var_export(plugin_config_get( 'url_webhooks' ))?></pre>
+          <?php echo sprintf(plugin_lang_get( 'option_type' ), 'url_webhooks', plugin_lang_get( 'url_webhooks_type' ))?>
+          <?php echo plugin_lang_get( 'config_report' )?>
+          <?php echo plugin_lang_get( 'current_value' )?><pre><?php var_export(plugin_config_get( 'url_webhooks' ))?></pre>
         </p>
       </td>
     </tr>
@@ -88,8 +88,7 @@ print_manage_menu( 'manage_plugin_page.php' );
       </td>
       <td colspan="2">
         <p>
-          Can be either a URL pointing to small image or an emoji of the form :emoji:</br>
-          Defaults to the Mantis logo.
+          <?php echo plugin_lang_get( 'bot_icon_description' )?>
         </p>
         <input type="text" name="bot_icon" value="<?php echo plugin_config_get( 'bot_icon' )?>" />
       </td>
@@ -135,12 +134,12 @@ print_manage_menu( 'manage_plugin_page.php' );
       </td>
       <td colspan="2">
         <p>
-          Specifies the mapping between Mantis project names and Slack #channels.
+          <?php echo plugin_lang_get( 'channels_description' )?>
         </p>
         <p>
-          Option name is <strong>plugin_Slack_channels</strong> and is an array of 'Mantis project name' => 'Slack channel name'.
-          Array options must be set using the <a href="adm_config_report.php">Configuration Report</a> screen.
-          The current value of this option is:<pre><?php var_export(plugin_config_get( 'channels' ))?></pre>
+          <?php echo sprintf(plugin_lang_get( 'option_type' ), 'channels', plugin_lang_get( 'channels_type' ))?>
+          <?php echo plugin_lang_get( 'config_report' )?>
+          <?php echo plugin_lang_get( 'current_value' )?><pre><?php var_export(plugin_config_get( 'channels' ))?></pre>
         </p>
       </td>
     </tr>
@@ -151,17 +150,17 @@ print_manage_menu( 'manage_plugin_page.php' );
       </td>
       <td colspan="2">
         <p>
-          Specifies the bug fields that should be attached to the Slack notifications.
+          <?php echo plugin_lang_get( 'columns_description' )?>
         </p>
         <p>
-          Option name is <strong>plugin_Slack_columns</strong> and is an array of bug column names.
-          Array options must be set using the <a href="adm_config_report.php">Configuration Report</a> screen.
+          <?php echo sprintf(plugin_lang_get( 'option_type' ), 'columns', plugin_lang_get( 'columns_type' ))?>
+          <?php echo plugin_lang_get( 'config_report' )?>
           <?php
             $t_columns = columns_get_all( @$t_project_id );
             $t_all = implode( ', ', $t_columns );
           ?>
-          Available column names are:<div><textarea name="all_columns" readonly="readonly" cols="80" rows="5"><?php echo $t_all ?></textarea></div>
-          The current value of this option is:<pre><?php var_export(plugin_config_get( 'columns' ))?></pre>
+          <?php echo plugin_lang_get( 'available_names' )?><div><textarea name="all_columns" readonly="readonly" cols="80" rows="5"><?php echo $t_all ?></textarea></div>
+          <?php echo plugin_lang_get( 'current_value' )?><pre><?php var_export(plugin_config_get( 'columns' ))?></pre>
         </p>
       </td>
     </tr>
@@ -172,12 +171,12 @@ print_manage_menu( 'manage_plugin_page.php' );
       </td>
       <td colspan="2">
         <p>
-          Specifies the mapping between Mantis and Slack user names.
+          <?php echo plugin_lang_get( 'usernames_description' )?>
         </p>
         <p>
-          Option name is <strong>plugin_Slack_usernames</strong> and is an array of 'Mantis user name' => 'Slack user name'.
-          Array options must be set using the <a href="adm_config_report.php">Configuration Report</a> screen.
-          The current value of this option is:<pre><?php var_export(plugin_config_get( 'usernames' ))?></pre>
+          <?php echo sprintf(plugin_lang_get( 'option_type' ), 'usernames', plugin_lang_get( 'usernames_type' ))?>
+          <?php echo plugin_lang_get( 'config_report' )?>
+          <?php echo plugin_lang_get( 'current_value' )?><pre><?php var_export(plugin_config_get( 'usernames' ))?></pre>
         </p>
       </td>
     </tr>
