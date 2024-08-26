@@ -18,50 +18,65 @@
  * or see http://www.gnu.org/licenses/.
  */
 
-form_security_validate( 'plugin_Slack_config' );
-access_ensure_global_level( config_get( 'manage_plugin_threshold' ) );
-
 /**
  * Sets plugin config option if value is different from current/default
  * @param string $p_name  option name
  * @param string $p_value value to set
  * @return void
  */
-function config_set_if_needed( $p_name, $p_value ) {
-	if ( $p_value != plugin_config_get( $p_name ) ) {
-		plugin_config_set( $p_name, $p_value );
-	}
+function config_set_if_needed($name, $value)
+{
+    if ($value != plugin_config_get($name)) {
+        plugin_config_set($name, $value);
+    }
 }
 
-$t_redirect_url = plugin_page( 'config_page', true );
-layout_page_header( null, $t_redirect_url );
+form_security_validate('plugin_Slack_config');
+
+$global = gpc_get_bool('global', false);
+
+$notifications = array(
+    'on_bug_report',
+    'on_bug_update',
+    'on_bug_deleted',
+    'on_bugnote_add',
+    'on_bugnote_edit',
+    'on_bugnote_deleted',
+    'skip_private',
+    'skip_bulk',
+    'notify_bugnote_contributed',
+);
+
+$strings = array(
+    'bug_format',
+    'bugnote_format'
+);
+
+$config = array();
+foreach ($notifications as $notification) {
+    $config[$notification] = gpc_get_bool($notification);
+}
+foreach ($strings as $string) {
+    $config[$string] = gpc_get_string($string);
+}
+
+$redirect_url = plugin_page('config_page', true);
+if ($global) {
+    access_ensure_global_level(config_get('manage_plugin_threshold'));
+    $config['url_webhook'] = gpc_get_string('url_webhook');
+    foreach ($config as $key => $value) {
+        config_set_if_needed($key, $value);
+    }
+    $redirect_url .= '&global=true';
+} else {
+    $user_id = auth_get_current_user_id();
+    $config['slack_user'] = gpc_get_string('slack_user');
+    slack_config_set($user_id, $config);
+}
+
+form_security_purge('plugin_Slack_config');
+
+layout_page_header(null, $redirect_url);
 layout_page_begin();
-
-if (gpc_get_string( 'url_webhook_test', false )) {
-
-  plugin_get()->notify(
-    plugin_lang_get('url_webhook_test_text'),
-    gpc_get_string( 'url_webhook' ),
-    gpc_get_string( 'default_channel' )
-  );
-
-}
-
-config_set_if_needed( 'url_webhook' , gpc_get_string( 'url_webhook' ) );
-config_set_if_needed( 'bot_name' , gpc_get_string( 'bot_name' ) );
-config_set_if_needed( 'bot_icon' , gpc_get_string( 'bot_icon' ) );
-config_set_if_needed( 'skip_private' , gpc_get_bool( 'skip_private' ) );
-config_set_if_needed( 'skip_bulk' , gpc_get_bool( 'skip_bulk' ) );
-config_set_if_needed( 'link_names' , gpc_get_bool( 'link_names' ) );
-config_set_if_needed( 'default_channel' , gpc_get_string( 'default_channel' ) );
-config_set_if_needed( 'notification_bug_report' , gpc_get_bool( 'notification_bug_report' ) );
-config_set_if_needed( 'notification_bug_update' , gpc_get_bool( 'notification_bug_update' ) );
-config_set_if_needed( 'notification_bug_deleted' , gpc_get_bool( 'notification_bug_deleted' ) );
-config_set_if_needed( 'notification_bugnote_add' , gpc_get_bool( 'notification_bugnote_add' ) );
-config_set_if_needed( 'notification_bugnote_edit' , gpc_get_bool( 'notification_bugnote_edit' ) );
-config_set_if_needed( 'notification_bugnote_deleted' , gpc_get_bool( 'notification_bugnote_deleted' ) );
-
-form_security_purge( 'plugin_Slack_config' );
-
-html_operation_successful( $t_redirect_url );
+html_operation_successful($redirect_url);
 layout_page_end();

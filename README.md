@@ -6,20 +6,24 @@ A [MantisBT](http://www.mantisbt.org/) plugin to send bug updates to [Slack](htt
 # Setup
 * The `master` branch requires Mantis 2.x, while the `master-1.2.x` branch works for Mantis 1.2.x.
 * Extract this repo to your *Mantis folder/plugins/Slack*.
-* On the Slack side, add a new "Incoming Webhooks" integration and note the URL that Slack generates for you.
-* On the MantisBT side, access the plugin's configuration page and fill in your Slack webhook URL.
-* You can map your MantisBT projects to Slack channels by setting the *plugin_Slack_channels* option in Mantis.  Follow the instructions on the plugin's configuration page to get there. Make sure the *plugin_Slack_channels* configuration option is set to "All Users", with type "complex".
-    Example value for this setting:
-
-            array (
-              'My First Mantis Project' => '#general',
-              'My Second Mantis Project' => '#second-project'
-            )
-
-* You can specify which bug fields appear in the Slack notifications. Edit the *plugin_Slack_columns* configuration option for this purpose.  Follow the
-instructions on the plugin configuration page.
-
-* For Discord, you need to append `/slack` so that Discord handles this as a Slack-compatible webhook. [More info here](https://discord.com/developers/docs/resources/webhook#execute-slackcompatible-webhook).
+* On the Slack side:
+  * Go to "More -> Automations -> Workflows -> New Workflow -> Build Workflow".
+  * Start the workflow: "Starts with a webhook"
+  * Add data variables as follows:
+    * Key: user, Data type: Slack user ID
+    * Key: text, Data type: Text
+  * In the end, example HTTP body would look like this:
+```json
+{
+  "text": "Example text",
+  "user": "U123456789"
+}
+```
+* On the MantisBT side:
+  * As a manager:
+    * Access the plugin's configuration page and fill in your Slack webhook URL.
+  * As a user:
+    * Access the account's configuration page and fill in your Slack user ID.
 
 # Development
 You can run a local development environment using Docker Compose:

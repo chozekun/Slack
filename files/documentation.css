@@ -1,0 +1,11 @@
+#content {
+  height: 100%;
+  padding: 20px;
+}
+
+.layout {
+  background: #fff;
+  border: 1px solid #ccc;
+  padding: 20px;
+  margin-bottom: 30px;
+}
