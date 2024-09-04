@@ -99,8 +99,8 @@ class SlackPlugin extends MantisPlugin
                 skip_private                L      NOTNULL DEFAULT 1,
                 skip_bulk                   L      NOTNULL DEFAULT 1,
                 notify_bugnote_contributed  L      NOTNULL DEFAULT 1,
-                bug_format                  XL     NOTNULL DEFAULT '',
-                bugnote_format              XL     NOTNULL DEFAULT ''
+                bug_format                  XL     NOTNULL,
+                bugnote_format              XL     NOTNULL
             ")),
         );
     }
