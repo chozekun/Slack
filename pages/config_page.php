@@ -154,7 +154,6 @@ foreach ($notifications as $notification) {
     <td>
       <input id="bug_id" class="ace" size="10" type="number" name="bug_id" value="" placeholder="Bug ID" />
       <a id="showvars_bug_format" class="btn btn-primary btn-white btn-round btn-sm preview" href="<?php echo plugin_page('preview') ?>"><?php echo plugin_lang_get('show_variables') ?></a>
-      <a id="showcodes_bug_format" class="btn btn-primary btn-white btn-round btn-sm preview" href="<?php echo plugin_page('preview') ?>"><?php echo plugin_lang_get('show_codes') ?></a>
       <a id="preview_bug_format" class="btn btn-primary btn-white btn-round btn-sm preview" href="<?php echo plugin_page('preview') ?>"><?php echo plugin_lang_get('preview') ?></a>
       <a id="restore_bug_format" class="btn btn-primary btn-white btn-round btn-sm restore" href="<?php echo plugin_page('restore') ?>"><?php echo plugin_lang_get('restore_default') ?></a>
       <div class="space-4"></div>
@@ -172,7 +171,6 @@ foreach ($notifications as $notification) {
     <td>
       <input id="bugnote_id" class="ace" size="10" type="number" name="bugnote_id" value="" placeholder="Bug Note ID" />
       <a id="showvars_bugnote_format" class="btn btn-primary btn-white btn-round btn-sm preview" href="<?php echo plugin_page('preview') ?>"><?php echo plugin_lang_get('show_variables') ?></a>
-      <a id="showcodes_bugnote_format" class="btn btn-primary btn-white btn-round btn-sm preview" href="<?php echo plugin_page('preview') ?>"><?php echo plugin_lang_get('show_codes') ?></a>
       <a id="preview_bugnote_format" class="btn btn-primary btn-white btn-round btn-sm preview" href="<?php echo plugin_page('preview') ?>"><?php echo plugin_lang_get('preview') ?></a>
       <a id="restore_bugnote_format" class="btn btn-primary btn-white btn-round btn-sm restore" href="<?php echo plugin_page('restore') ?>"><?php echo plugin_lang_get('restore_default') ?></a>
       <div class="space-4"></div>
