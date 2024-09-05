@@ -241,13 +241,7 @@ function slack_bbcode_to_text($bbtext)
 
 function slack_format_text($text)
 {
-    return strip_tags(
-        str_replace(
-            array('&', '<', '>'),
-            array('&amp;', '&lt;', '&gt;'),
-            slack_bbcode_to_text($text)
-        )
-    );
+    return strip_tags(slack_bbcode_to_text($text));
 }
 
 function slack_is_field_short($column)
