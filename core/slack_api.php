@@ -312,18 +312,30 @@ function slack_bug_data($user_id, $bug)
         );
     }
 
+    $reflection = new ReflectionFunction('history_localize_item');
+    $new_history_localize_item = $reflection->getParameters()[0]->getName() == "p_bug_id";
     $history = array();
     if (ON == config_get('history_default_visible') && access_compare_level($user_access_level, config_get('view_history_threshold'))) {
         $history_raw_events = history_get_raw_events_array($bug->id, $user_id);
         foreach ($history_raw_events as $t_raw_history_item) {
-            $t_localized_item = history_localize_item(
-                $t_raw_history_item['bug_id'],
-                $t_raw_history_item['field'],
-                $t_raw_history_item['type'],
-                $t_raw_history_item['old_value'],
-                $t_raw_history_item['new_value'],
-                false
-            );
+            if ($new_history_localize_item) {
+                $t_localized_item = history_localize_item(
+                    $t_raw_history_item['bug_id'],
+                    $t_raw_history_item['field'],
+                    $t_raw_history_item['type'],
+                    $t_raw_history_item['old_value'],
+                    $t_raw_history_item['new_value'],
+                    false
+                );
+            } else {
+                $t_localized_item = history_localize_item(
+                    $t_raw_history_item['field'],
+                    $t_raw_history_item['type'],
+                    $t_raw_history_item['old_value'],
+                    $t_raw_history_item['new_value'],
+                    false
+                );
+            }
             $history[] = array(
                 'date' => date($date_format, $t_raw_history_item['date']),
                 'username' => $t_raw_history_item['username'],
