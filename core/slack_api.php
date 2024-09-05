@@ -41,6 +41,21 @@ function slack_get_webhook()
     return plugin_config_get('url_webhook');
 }
 
+function slack_collect_receivers_all()
+{
+    global $g_cache_slack_user;
+    $table = plugin_table('user_config');
+    $query = "SELECT * FROM $table WHERE slack_user <> ''";
+    $result = db_query($query);
+    $receivers = array();
+    while ($row = db_fetch_array($result)) {
+        $user_id = $row['user_id'];
+        $g_cache_slack_user[$user_id] = $row;
+        $receivers[$user_id] = $row['slack_user'];
+    }
+    return $receivers;
+}
+
 function slack_config_get($user_id)
 {
     global $g_cache_slack_user;
@@ -352,7 +367,7 @@ function slack_bug_data($user_id, $bug)
         ),
         'id' => array(
             'field' => lang_get('issue_id'),
-            'value' => bug_format_id('%s', $bug->id),
+            'value' => bug_format_id($bug->id),
         ),
         'reporter' => array(
             'field' => lang_get('reporter'),
@@ -672,27 +687,6 @@ function slack_collect_receivers($bug, $bugnote = null)
 
     $final_receivers = array();
     foreach ($receivers as $user_id => $_) {
-        # Possibly eliminate the current user
-        if ((auth_get_current_user_id() == $user_id)) {
-            continue;
-        }
-
-        # Eliminate users who don't exist anymore or who are disabled
-        if (!user_exists($user_id) || !user_is_enabled($user_id)) {
-            continue;
-        }
-
-        # exclude users who don't have at least viewer access to the bug,
-        # or who can't see bugnotes if the last update included a bugnote
-        $view_bug_threshold = config_get('view_bug_threshold', null, $user_id, $bug->project_id);
-        if (!access_has_bug_level($view_bug_threshold, $bug->id, $user_id)) {
-            continue;
-        }
-        if ($bugnote && !access_has_bugnote_level($view_bug_threshold, $bugnote->id, $user_id)) {
-            continue;
-        }
-
-        # Finally, let's get their slack user id, if they've set one
         $slack_user = slack_config_get_user($user_id);
         if (!$slack_user || is_blank($slack_user)) {
             continue;
@@ -702,24 +696,89 @@ function slack_collect_receivers($bug, $bugnote = null)
     return $final_receivers;
 }
 
+function slack_check_skip($user_id, $event, $is_bulk, $bug, $bugnote = null)
+{
+    # Possibly eliminate the current user
+    if ((auth_get_current_user_id() == $user_id)) {
+        return true;
+    }
+
+    # Eliminate users who don't exist anymore or who are disabled
+    if (!user_exists($user_id) || !user_is_enabled($user_id)) {
+        return true;
+    }
+
+    # exclude users who don't have at least viewer access to the bug,
+    # or who can't see bugnotes if the last update included a bugnote
+    $view_bug_threshold = config_get('view_bug_threshold', null, $user_id, $bug->project_id);
+    if (!access_has_bug_level($view_bug_threshold, $bug->id, $user_id)) {
+        return true;
+    }
+    if ($bugnote && !access_has_bugnote_level($view_bug_threshold, $bugnote->id, $user_id)) {
+        return true;
+    }
+
+    if ($is_bulk && slack_config_get_field($user_id, 'skip_bulk')) {
+        return true;
+    }
+
+    $skip_private = slack_config_get_field($user_id, 'skip_private');
+    if ($bug->view_state == VS_PRIVATE && $skip_private) {
+        return true;
+    }
+    if ($bugnote && $bugnote->view_state == VS_PRIVATE && $skip_private) {
+        return true;
+    }
+
+    if (!slack_config_get_field($user_id, $event)) {
+        return true;
+    }
+
+    return false;
+}
+
 function slack_bug_action($action, $bug)
 {
-    $event = $action == 'DELETE' ? 'on_bug_deleted' : 'on_bug_update';
-    slack_bug_event($event, $bug, true);
+    switch ($action) {
+        case "COPY":
+            slack_bug_event('on_bug_report', $bug, true);
+            break;
+        case "DELETE":
+            slack_bug_event('on_bug_deleted', $bug, true);
+            break;
+        case "EXT_ADD_NOTE":
+            $bugnote_id = bugnote_get_latest_id($bug->id);
+            $bugnote = bugnote_get($bugnote_id);
+            slack_bugnote_event('on_bugnote_add', $bug, $bugnote, true);
+            break;
+        case "ASSIGN":
+        case "CLOSE":
+        case "RESOLVE":
+        case "SET_STICKY":
+        case "UP_PRIOR":
+        case "EXT_UPDATE_SEVERITY":
+        case "UP_STATUS":
+        case "UP_CATEGORY":
+        case "VIEW_STATUS":
+        case "EXT_ATTACH_TAGS":
+        case "UP_PRODUCT_VERSION":
+        case "UP_FIXED_IN_VERSION":
+        case "UP_TARGET_VERSION":
+        default:
+            slack_bug_event('on_bug_update', $bug, true);
+            break;
+    }
 }
 
 function slack_bug_event($event, $bug, $is_bulk = false)
 {
-    $is_private = $bug->view_state == VS_PRIVATE;
-    $receivers = slack_collect_receivers($bug);
+    if ($event == 'on_bug_report') {
+        $receivers = slack_collect_receivers_all();
+    } else {
+        $receivers = slack_collect_receivers($bug);
+    }
     foreach ($receivers as $user_id => $slack_user) {
-        if ($is_bulk && slack_config_get_field($user_id, 'skip_bulk')) {
-            continue;
-        }
-        if ($is_private && slack_config_get_field($user_id, 'skip_private')) {
-            continue;
-        }
-        if (!slack_config_get_field($user_id, $event)) {
+        if (slack_check_skip($user_id, $event, $is_bulk, $bug)) {
             continue;
         }
         $bug_data = slack_bug_data($user_id, $bug);
@@ -731,20 +790,11 @@ function slack_bug_event($event, $bug, $is_bulk = false)
     }
 }
 
-function slack_bugnote_event($event, $bug, $bugnote, $files = array())
+function slack_bugnote_event($event, $bug, $bugnote, $is_bulk = false, $files = array())
 {
-    $is_private_bug = $bug->view_state == VS_PRIVATE;
-    $is_private_bugnote = $bugnote->view_state == VS_PRIVATE;
     $receivers = slack_collect_receivers($bug, $bugnote);
     foreach ($receivers as $user_id => $slack_user) {
-        $skip_private = slack_config_get_field($user_id, 'skip_private');
-        if ($is_private_bug && $skip_private) {
-            continue;
-        }
-        if ($is_private_bugnote && $skip_private) {
-            continue;
-        }
-        if (!slack_config_get_field($user_id, $event)) {
+        if (slack_check_skip($user_id, $event, $is_bulk, $bug, $bugnote)) {
             continue;
         }
         $bug_data = slack_bug_data($user_id, $bug);

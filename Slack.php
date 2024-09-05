@@ -166,6 +166,10 @@ class SlackPlugin extends MantisPlugin
         if ($this->skip()) {
             return;
         }
+        // INFO: Because the event handler is called after the bug is deleted
+        if ($action == "DELETE") {
+            return;
+        }
         $bug = bug_get($bug_id);
         slack_bug_action($action, $bug);
     }
@@ -202,7 +206,7 @@ class SlackPlugin extends MantisPlugin
         }
         $bug = bug_get($bug_id);
         $bugnote = bugnote_get($bugnote_id);
-        slack_bugnote_event($this->event_to_config($event), $bug, $bugnote, $files);
+        slack_bugnote_event($this->event_to_config($event), $bug, $bugnote, false, $files);
     }
 
     public function bugnote_edit($event, $bug_id, $bugnote_id)
