@@ -45,6 +45,7 @@ $s_plugin_Slack_skip = '슬랙 알림 생략';
 $s_plugin_Slack_global_config = '전체 슬랙 설정';
 $s_plugin_Slack_user_config = '내 슬랙 설정';
 $s_plugin_Slack_user_id = '슬랙 유저 ID';
+$s_plugin_Slack_user_ids = '슬랙 유저 ID 목록';
 $s_plugin_Slack_update = '업데이트';
 $s_plugin_Slack_restore_default = '기본값 복원';
 $s_plugin_Slack_show_variables = '변수 보기';
@@ -52,6 +53,7 @@ $s_plugin_Slack_show_codes = '코드 보기';
 $s_plugin_Slack_preview = '미리보기';
 $s_plugin_Slack_syntax_documentation = '문법 설명';
 $s_plugin_Slack_webhook_description = '파라미터를 다음과 같이 설정하세요:';
+$s_plugin_Slack_user_ids_description = '각 줄을 MantisID=SlackID 형식으로 설정하세요.';
 $s_plugin_Slack_type_text = '유형: 텍스트';
 $s_plugin_Slack_type_slack_user_id = '유형: Slack 사용자 ID';
 

@@ -80,7 +80,6 @@ function slack_config_set($user_id, $config)
     $count = db_result($result);
 
     $params = array(
-        $config['slack_user'],
         $config['on_bug_report'],
         $config['on_bug_update'],
         $config['on_bug_deleted'],
@@ -90,56 +89,69 @@ function slack_config_set($user_id, $config)
         $config['skip_private'],
         $config['skip_bulk'],
         $config['notify_bugnote_contributed'],
-        $config['bug_format'],
-        $config['bugnote_format'],
         $user_id,
     );
     if ($count > 0) {
         $query = "UPDATE $table SET
-		    slack_user = " . db_param() . "
-		    , on_bug_report = " . db_param() . "
-		    , on_bug_update = " . db_param() . "
-		    , on_bug_deleted = " . db_param() . "
-		    , on_bugnote_add = " . db_param() . "
-		    , on_bugnote_edit = " . db_param() . "
-		    , on_bugnote_deleted = " . db_param() . "
-		    , skip_private = " . db_param() . "
-		    , skip_bulk = " . db_param() . "
-		    , notify_bugnote_contributed = " . db_param() . "
-		    , bug_format = " . db_param() . "
-		    , bugnote_format = " . db_param() . "
-		    WHERE user_id = " . db_param();
+            on_bug_report = " . db_param() . "
+            , on_bug_update = " . db_param() . "
+            , on_bug_deleted = " . db_param() . "
+            , on_bugnote_add = " . db_param() . "
+            , on_bugnote_edit = " . db_param() . "
+            , on_bugnote_deleted = " . db_param() . "
+            , skip_private = " . db_param() . "
+            , skip_bulk = " . db_param() . "
+            , notify_bugnote_contributed = " . db_param() . "
+            WHERE user_id = " . db_param();
     } else {
         $query = "INSERT INTO $table
-		    ( slack_user
-		    , on_bug_report
-		    , on_bug_update
-		    , on_bug_deleted
-		    , on_bugnote_add
-		    , on_bugnote_edit
-		    , on_bugnote_deleted
-		    , skip_private
-		    , skip_bulk
-		    , notify_bugnote_contributed
-		    , bug_format
-		    , bugnote_format
-		    , user_id
-	    )
-        VALUES
-		    ( " . db_param() . "
-		    , " . db_param() . "
-		    , " . db_param() . "
-		    , " . db_param() . "
-		    , " . db_param() . "
-		    , " . db_param() . "
-		    , " . db_param() . "
-		    , " . db_param() . "
-		    , " . db_param() . "
-		    , " . db_param() . "
-		    , " . db_param() . "
-		    , " . db_param() . "
-		    , " . db_param() . "
-	    )";
+            ( on_bug_report
+            , on_bug_update
+            , on_bug_deleted
+            , on_bugnote_add
+            , on_bugnote_edit
+            , on_bugnote_deleted
+            , skip_private
+            , skip_bulk
+            , notify_bugnote_contributed
+            , user_id
+            )
+            VALUES
+            ( " . db_param() . "
+            , " . db_param() . "
+            , " . db_param() . "
+            , " . db_param() . "
+            , " . db_param() . "
+            , " . db_param() . "
+            , " . db_param() . "
+            , " . db_param() . "
+            , " . db_param() . "
+            , " . db_param() . "
+            )";
+    }
+    db_query($query, $params);
+}
+
+function slack_config_set_slack_user($user_id, $slack_user)
+{
+    $table = plugin_table('user_config');
+    $query = "SELECT COUNT(id) FROM $table WHERE user_id = " . db_param();
+    $result = db_query($query, array($user_id));
+    $count = db_result($result);
+    $params = array($slack_user, $user_id);
+    if ($count > 0) {
+        $query = "UPDATE $table SET
+            slack_user = " . db_param() . "
+            WHERE user_id = " . db_param();
+    } else {
+        $query = "INSERT INTO $table
+            ( slack_user
+            , user_id
+            )
+            VALUES
+            ( " . db_param() . "
+            , " . db_param() . "
+            )";
     }
     db_query($query, $params);
 }
@@ -161,14 +173,14 @@ function slack_config_get_user($user_id)
     return slack_config_get_field($user_id, 'slack_user');
 }
 
-function slack_config_get_bug_format($user_id)
+function slack_config_get_bug_format()
 {
-    return slack_config_get_field($user_id, 'bug_format');
+    return plugin_config_get('bug_format');
 }
 
-function slack_config_get_bugnote_format($user_id)
+function slack_config_get_bugnote_format()
 {
-    return slack_config_get_field($user_id, 'bugnote_format');
+    return plugin_config_get('bugnote_format');
 }
 
 function slack_event_string($event)
@@ -789,7 +801,7 @@ function slack_bug_event($event, $bug, $is_bulk = false)
         }
         $bug_data = slack_bug_data($user_id, $bug);
         $bug_data['event'] = slack_event_string($event);
-        $bug_format = slack_config_get_bug_format($user_id);
+        $bug_format = slack_config_get_bug_format();
         $compiled_template = slack_get_compiled_template($bug_format);
         $text = template_render($compiled_template, $bug_data);
         slack_notify($slack_user, $text);
@@ -806,7 +818,7 @@ function slack_bugnote_event($event, $bug, $bugnote, $is_bulk = false, $files = 
         $bug_data = slack_bug_data($user_id, $bug);
         $bug_data['event'] = slack_event_string($event);
         $bug_data['bugnote'] = slack_bugnote_data($user_id, $bugnote, $files);
-        $bugnote_format = slack_config_get_bugnote_format($user_id);
+        $bugnote_format = slack_config_get_bugnote_format();
         $compiled_template = slack_get_compiled_template($bugnote_format);
         $text = template_render($compiled_template, $bug_data);
         slack_notify($slack_user, $text);

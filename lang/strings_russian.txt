@@ -46,6 +46,7 @@ $s_plugin_Slack_skip = 'Пропустить оповещение в Slack';
 $s_plugin_Slack_global_config = 'Global Slack Configuration';
 $s_plugin_Slack_user_config = 'My Slack Configuration';
 $s_plugin_Slack_user_id = 'Slack User ID';
+$s_plugin_Slack_user_ids = 'Slack User ID List';
 $s_plugin_Slack_update = 'Update';
 $s_plugin_Slack_restore_default = 'Restore Default';
 $s_plugin_Slack_show_variables = 'Show Variables';
@@ -53,6 +54,7 @@ $s_plugin_Slack_show_codes = 'Show Codes';
 $s_plugin_Slack_preview = 'Preview';
 $s_plugin_Slack_syntax_documentation = 'Syntax Documentation';
 $s_plugin_Slack_webhook_description = 'You need to set the parameters as follows:';
+$s_plugin_Slack_user_ids_description = 'Each line must be in the following format: MantisUsername=SlackID';
 $s_plugin_Slack_type_text = 'Type: Text';
 $s_plugin_Slack_type_slack_user_id = 'Type: Slack User ID';
 

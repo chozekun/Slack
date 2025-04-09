@@ -97,6 +97,7 @@ EOT;
 
 <div class="widget-body">
 
+<?php if ($global) { ?>
 <div class="widget-toolbox padding-8 clearfix">
   <div class="form-container">
     <div class="pull-left">
@@ -106,6 +107,7 @@ EOT;
     </div>
   </div>
 </div>
+<?php } ?>
 
 <div class="widget-main no-padding">
 <div class="table-responsive">
@@ -122,13 +124,13 @@ EOT;
       <a id="webhook_test" class="btn btn-primary btn-white btn-round" href="<?php echo plugin_page('webhook_test') ?>"><?php echo plugin_lang_get('url_webhook_test')?></a>
     </td>
   </tr>
-<?php } else { ?>
   <tr>
     <td class="category">
-      <?php echo plugin_lang_get('user_id') ?>
+      <?php echo plugin_lang_get('user_ids') ?><br/>
+      <span class="small"><?php echo plugin_lang_get('user_ids_description') ?></span>
     </td>
     <td colspan="2">
-      <input class="ace" id="slack_user" type="text" name="slack_user" size="32" value="<?php echo config_page_get('slack_user'); ?>" />
+      <textarea class="form-control" cols="80" name="user_ids" id="user_ids"><?php echo config_page_get('user_ids') ?></textarea>
     </td>
   </tr>
 <?php } ?>
@@ -144,6 +146,7 @@ foreach ($notifications as $notification) {
     </td>
   </tr>
 
+<?php if ($global) { ?>
   <tr>
     <td class="category">
       <?php echo plugin_lang_get('bug_format')?>
@@ -177,6 +180,7 @@ foreach ($notifications as $notification) {
       <pre id="bugnote_format_preview"></pre>
     </td>
   </tr>
+<?php } ?>
 
 </table>
 </div>

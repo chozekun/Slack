@@ -53,6 +53,7 @@ class SlackPlugin extends MantisPlugin
         $bugnote_format = file_get_contents(dirname(__FILE__) . '/bugnote.tpl');
         return array(
             'url_webhook' => '',
+            'user_ids' => '',
             'on_bug_report' => true,
             'on_bug_update' => true,
             'on_bug_deleted' => true,
@@ -89,7 +90,7 @@ class SlackPlugin extends MantisPlugin
             array( "CreateTableSQL", array( plugin_table("user_config"), "
                 id                          I      NOTNULL UNSIGNED AUTOINCREMENT PRIMARY,
                 user_id                     I      NOTNULL UNSIGNED,
-                slack_user                  C(16)  NOTNULL,
+                slack_user                  C(16)  NOTNULL DEFAULT '',
                 on_bug_report               L      NOTNULL DEFAULT 1,
                 on_bug_update               L      NOTNULL DEFAULT 1,
                 on_bug_deleted              L      NOTNULL DEFAULT 1,
@@ -98,9 +99,7 @@ class SlackPlugin extends MantisPlugin
                 on_bugnote_deleted          L      NOTNULL DEFAULT 1,
                 skip_private                L      NOTNULL DEFAULT 1,
                 skip_bulk                   L      NOTNULL DEFAULT 1,
-                notify_bugnote_contributed  L      NOTNULL DEFAULT 1,
-                bug_format                  XL     NOTNULL,
-                bugnote_format              XL     NOTNULL
+                notify_bugnote_contributed  L      NOTNULL DEFAULT 1
             ")),
         );
     }

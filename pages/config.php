@@ -28,6 +28,21 @@ function config_set_if_needed($name, $value)
 {
     if ($value != plugin_config_get($name)) {
         plugin_config_set($name, $value);
+        return true;
+    }
+    return false;
+}
+
+function config_set_slack_users()
+{
+    $user_ids = gpc_get_string('user_ids');
+    $changed = config_set_if_needed('user_ids', $user_ids);
+    if ($changed) {
+        $users = parse_ini_string($user_ids);
+        foreach ($users as $username => $slack_user) {
+            $user_id = user_get_id_by_name($username);
+            slack_config_set_slack_user($user_id, $slack_user);
+        }
     }
 }
 
@@ -56,21 +71,21 @@ $config = array();
 foreach ($notifications as $notification) {
     $config[$notification] = gpc_get_bool($notification);
 }
-foreach ($strings as $string) {
-    $config[$string] = gpc_get_string($string);
-}
 
 $redirect_url = plugin_page('config_page', true);
 if ($global) {
+    foreach ($strings as $string) {
+        $config[$string] = gpc_get_string($string);
+    }
     access_ensure_global_level(config_get('manage_plugin_threshold'));
     $config['url_webhook'] = gpc_get_string('url_webhook');
     foreach ($config as $key => $value) {
         config_set_if_needed($key, $value);
     }
+    config_set_slack_users();
     $redirect_url .= '&global=true';
 } else {
     $user_id = auth_get_current_user_id();
-    $config['slack_user'] = gpc_get_string('slack_user');
     slack_config_set($user_id, $config);
 }
 
