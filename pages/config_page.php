@@ -23,15 +23,15 @@ $global = gpc_get_bool('global', false);
 $user_id = auth_get_current_user_id();
 
 $notifications = array(
-  'on_bug_report',
-  'on_bug_update',
-  'on_bug_deleted',
-  'on_bugnote_add',
-  'on_bugnote_edit',
-  'on_bugnote_deleted',
-  'skip_private',
-  'skip_bulk',
-  'notify_bugnote_contributed',
+  'on_bug_report' => true,
+  'on_bug_update' => true,
+  'on_bug_deleted' => true,
+  'on_bugnote_add' => true,
+  'on_bugnote_edit' => true,
+  'on_bugnote_deleted' => true,
+  'notify_private' => false,
+  'notify_bulk' => false,
+  'notify_bugnote_contributed' => true,
 );
 
 $current_menu_page = plugin_page(basename(__FILE__, '.php'));
@@ -51,20 +51,19 @@ if ($global) {
     print_account_menu($current_menu_page);
 }
 
-function config_page_get($field)
+function checkbox_attr($field, $default)
 {
-    global $global, $user_id;
-    return $global ? plugin_config_get($field) : slack_config_get_field($user_id, $field);
+    global $user_id;
+    $value = slack_config_get_field($user_id, $field);
+    if ($value == null) {
+        return $default;
+    }
+    return $value ? "checked" : "";
 }
 
-function checkbox_attr($field)
+function make_checkbox($field, $default)
 {
-    return config_page_get($field) ? "checked" : "";
-}
-
-function make_checkbox($field)
-{
-    $is_checked = checkbox_attr($field);
+    $is_checked = checkbox_attr($field, $default);
     $label = plugin_lang_get($field);
     return <<<EOT
 <div>
@@ -114,6 +113,7 @@ EOT;
 <table class="table table-bordered table-condensed table-striped">
 
 <?php if ($global) { ?>
+
   <tr>
     <td class="category">
       <?php echo plugin_lang_get('url_webhook') ?><br/>
@@ -124,35 +124,23 @@ EOT;
       <a id="webhook_test" class="btn btn-primary btn-white btn-round" href="<?php echo plugin_page('webhook_test') ?>"><?php echo plugin_lang_get('url_webhook_test')?></a>
     </td>
   </tr>
+
   <tr>
     <td class="category">
       <?php echo plugin_lang_get('user_ids') ?><br/>
       <span class="small"><?php echo plugin_lang_get('user_ids_description') ?></span>
     </td>
     <td colspan="2">
-      <textarea class="form-control" cols="80" name="user_ids" id="user_ids"><?php echo config_page_get('user_ids') ?></textarea>
-    </td>
-  </tr>
-<?php } ?>
-
-  <tr>
-    <td class="category"><?php echo plugin_lang_get('notifications')?></td>
-    <td colspan="2">
-<?php
-foreach ($notifications as $notification) {
-    echo make_checkbox($notification);
-}
-?>
+      <textarea class="form-control" cols="80" name="user_ids" id="user_ids"><?php echo plugin_config_get('user_ids') ?></textarea>
     </td>
   </tr>
 
-<?php if ($global) { ?>
   <tr>
     <td class="category">
       <?php echo plugin_lang_get('bug_format')?>
     </td>
     <td>
-      <textarea class="form-control" cols="80" name="bug_format" id="bug_format"><?php echo config_page_get('bug_format') ?></textarea>
+      <textarea class="form-control" cols="80" name="bug_format" id="bug_format"><?php echo plugin_config_get('bug_format') ?></textarea>
     </td>
     <td>
       <input id="bug_id" class="ace" size="10" type="number" name="bug_id" value="" placeholder="Bug ID" />
@@ -169,7 +157,7 @@ foreach ($notifications as $notification) {
       <?php echo plugin_lang_get('bugnote_format')?>
     </td>
     <td>
-      <textarea class="form-control" cols="80" name="bugnote_format" id="bugnote_format"><?php echo config_page_get('bugnote_format') ?></textarea>
+      <textarea class="form-control" cols="80" name="bugnote_format" id="bugnote_format"><?php echo plugin_config_get('bugnote_format') ?></textarea>
     </td>
     <td>
       <input id="bugnote_id" class="ace" size="10" type="number" name="bugnote_id" value="" placeholder="Bug Note ID" />
@@ -180,10 +168,28 @@ foreach ($notifications as $notification) {
       <pre id="bugnote_format_preview"></pre>
     </td>
   </tr>
+
+<?php } else { ?>
+
+  <tr>
+    <td class="category">
+      <?php echo plugin_lang_get('notifications')?><br/>
+      <span class="small"><?php echo plugin_lang_get('notifications_description') ?></span>
+    </td>
+    <td>
+<?php
+foreach ($notifications as $notification => $default) {
+    echo make_checkbox($notification, $default);
+}
+?>
+    </td>
+  </tr>
+
 <?php } ?>
 
 </table>
 </div>
+
 </div>
 <div class="widget-toolbox padding-8 clearfix">
   <input type="submit" class="btn btn-primary btn-white btn-round" value="<?php echo plugin_lang_get('update') ?>" />

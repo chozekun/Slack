@@ -86,8 +86,8 @@ function slack_config_set($user_id, $config)
         $config['on_bugnote_add'],
         $config['on_bugnote_edit'],
         $config['on_bugnote_deleted'],
-        $config['skip_private'],
-        $config['skip_bulk'],
+        $config['notify_private'],
+        $config['notify_bulk'],
         $config['notify_bugnote_contributed'],
         $user_id,
     );
@@ -99,8 +99,8 @@ function slack_config_set($user_id, $config)
             , on_bugnote_add = " . db_param() . "
             , on_bugnote_edit = " . db_param() . "
             , on_bugnote_deleted = " . db_param() . "
-            , skip_private = " . db_param() . "
-            , skip_bulk = " . db_param() . "
+            , notify_private = " . db_param() . "
+            , notify_bulk = " . db_param() . "
             , notify_bugnote_contributed = " . db_param() . "
             WHERE user_id = " . db_param();
     } else {
@@ -111,8 +111,8 @@ function slack_config_set($user_id, $config)
             , on_bugnote_add
             , on_bugnote_edit
             , on_bugnote_deleted
-            , skip_private
-            , skip_bulk
+            , notify_private
+            , notify_bulk
             , notify_bugnote_contributed
             , user_id
             )
@@ -162,10 +162,7 @@ function slack_config_get_field($user_id, $field)
     if ($user_config) {
         return $user_config[$field];
     }
-    if ($field == 'slack_user') {
-        return null;
-    }
-    return plugin_config_get($field);
+    return null;
 }
 
 function slack_config_get_user($user_id)
@@ -742,15 +739,15 @@ function slack_check_skip($user_id, $event, $is_bulk, $bug, $bugnote = null)
         return true;
     }
 
-    if ($is_bulk && slack_config_get_field($user_id, 'skip_bulk')) {
+    if ($is_bulk && !slack_config_get_field($user_id, 'notify_bulk')) {
         return true;
     }
 
-    $skip_private = slack_config_get_field($user_id, 'skip_private');
-    if ($bug->view_state == VS_PRIVATE && $skip_private) {
+    $notify_private = slack_config_get_field($user_id, 'notify_private');
+    if ($bug->view_state == VS_PRIVATE && !$notify_private) {
         return true;
     }
-    if ($bugnote && $bugnote->view_state == VS_PRIVATE && $skip_private) {
+    if ($bugnote && $bugnote->view_state == VS_PRIVATE && !$notify_private) {
         return true;
     }
 

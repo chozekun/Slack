@@ -54,15 +54,6 @@ class SlackPlugin extends MantisPlugin
         return array(
             'url_webhook' => '',
             'user_ids' => '',
-            'on_bug_report' => true,
-            'on_bug_update' => true,
-            'on_bug_deleted' => true,
-            'on_bugnote_add' => true,
-            'on_bugnote_edit' => true,
-            'on_bugnote_deleted' => true,
-            'skip_private' => true,
-            'skip_bulk' => true,
-            'notify_bugnote_contributed' => true,
             'bug_format' => $bug_format,
             'bugnote_format' => $bugnote_format,
         );
@@ -97,8 +88,8 @@ class SlackPlugin extends MantisPlugin
                 on_bugnote_add              L      NOTNULL DEFAULT 1,
                 on_bugnote_edit             L      NOTNULL DEFAULT 1,
                 on_bugnote_deleted          L      NOTNULL DEFAULT 1,
-                skip_private                L      NOTNULL DEFAULT 1,
-                skip_bulk                   L      NOTNULL DEFAULT 1,
+                notify_private              L      NOTNULL DEFAULT 0,
+                notify_bulk                 L      NOTNULL DEFAULT 0,
                 notify_bugnote_contributed  L      NOTNULL DEFAULT 1
             ")),
         );

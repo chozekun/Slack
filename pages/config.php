@@ -57,8 +57,8 @@ $notifications = array(
     'on_bugnote_add',
     'on_bugnote_edit',
     'on_bugnote_deleted',
-    'skip_private',
-    'skip_bulk',
+    'notify_private',
+    'notify_bulk',
     'notify_bugnote_contributed',
 );
 
