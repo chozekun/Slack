@@ -640,7 +640,13 @@ function slack_notify($slack_user, $text, $url = null)
         'user' => $slack_user,
         'text' => $text,
     );
-    return slack_post($url ? $url : slack_get_webhook(), $payload);
+    $url = $url ? $url : slack_get_webhook();
+    $result = slack_post($url, $payload);
+    while ($result['ok'] == false && $result['error'] == "ratelimited") {
+        usleep(0.1 * 1000 * 1000);
+        $result = slack_post($url, $payload);
+    }
+    return $result;
 }
 
 function slack_collect_receivers($bug, $bugnote = null)
