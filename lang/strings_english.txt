@@ -29,6 +29,7 @@ $s_plugin_Slack_bug_format = 'Bug message format';
 $s_plugin_Slack_bugnote_format = 'Bug note message format';
 $s_plugin_Slack_notifications = 'Notification Settings';
 $s_plugin_Slack_notifications_description = 'Users involved in the issue include the reporter, assignee, watcher, category owner,<br>mentioned users, and optionally the bug note author.';
+$s_plugin_Slack_notifications_unavailable = 'Unable to set up Slack notifications, contact your admin.';
 $s_plugin_Slack_on_bug_report = 'Notify on every issue creation';
 $s_plugin_Slack_on_bug_update = 'Notify when an issue I\'m involved in is updated';
 $s_plugin_Slack_on_bug_deleted = 'Notify when an issue I\'m involved in is deleted';

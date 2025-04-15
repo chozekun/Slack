@@ -56,7 +56,7 @@ function checkbox_attr($field, $default)
     global $user_id;
     $value = slack_config_get_field($user_id, $field);
     if ($value == null) {
-        return $default;
+        $value = $default;
     }
     return $value ? "checked" : "";
 }
@@ -178,8 +178,13 @@ EOT;
     </td>
     <td>
 <?php
-foreach ($notifications as $notification => $default) {
+$slack_user = slack_config_get_user($user_id);
+if (!$slack_user || is_blank($slack_user)) {
+  echo plugin_lang_get('notifications_unavailable');
+} else {
+  foreach ($notifications as $notification => $default) {
     echo make_checkbox($notification, $default);
+  }
 }
 ?>
     </td>

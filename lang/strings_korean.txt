@@ -29,6 +29,7 @@ $s_plugin_Slack_bug_format = '버그 메세지 형식';
 $s_plugin_Slack_bugnote_format = '버그 노트 메세지 형식';
 $s_plugin_Slack_notifications = '알림 설정';
 $s_plugin_Slack_notifications_description = '이슈에 관여된 사용자는 보고자, 할당자, 감시자, 카테고리 소유자,<br>언급된 사용자, 버그 노트 작성자(설정 가능)입니다.';
+$s_plugin_Slack_notifications_unavailable = '슬랙 알림을 설정할 수 없습니다. 관리자에게 문의하세요.';
 $s_plugin_Slack_on_bug_report = '모든 이슈 생성 시 알림';
 $s_plugin_Slack_on_bug_update = '내가 관여된 이슈 수정 시 알림';
 $s_plugin_Slack_on_bug_deleted = '내가 관여된 이슈 삭제 시 알림';
