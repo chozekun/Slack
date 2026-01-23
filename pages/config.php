@@ -74,12 +74,13 @@ foreach ($notifications as $notification) {
 
 $redirect_url = plugin_page('config_page', true);
 if ($global) {
+    $global_config = array();
     foreach ($strings as $string) {
-        $config[$string] = gpc_get_string($string);
+        $global_config[$string] = gpc_get_string($string);
     }
     access_ensure_global_level(config_get('manage_plugin_threshold'));
-    $config['url_webhook'] = gpc_get_string('url_webhook');
-    foreach ($config as $key => $value) {
+    $global_config['url_webhook'] = gpc_get_string('url_webhook');
+    foreach ($global_config as $key => $value) {
         config_set_if_needed($key, $value);
     }
     config_set_slack_users();

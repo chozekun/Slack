@@ -1,5 +1,7 @@
 <?php
 
+access_ensure_global_level(config_get('manage_plugin_threshold'));
+
 $url = gpc_get_string('url_webhook');
 $user_id = auth_get_current_user_id();
 $slack_user = slack_config_get_user($user_id);

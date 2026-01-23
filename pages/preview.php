@@ -1,5 +1,7 @@
 <?php
 
+access_ensure_global_level(config_get('manage_plugin_threshold'));
+
 $user_id = auth_get_current_user_id();
 $action = gpc_get_string('action');
 $format = gpc_get_string('format');

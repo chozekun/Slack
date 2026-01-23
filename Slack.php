@@ -185,6 +185,9 @@ class SlackPlugin extends MantisPlugin
         if ($this->skip()) {
             return;
         }
+        if (!bug_exists($bug_id)) {
+            return;
+        }
         $bug = bug_get($bug_id);
         slack_bug_event($this->event_to_config($event), $bug);
     }

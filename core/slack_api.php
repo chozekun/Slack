@@ -268,258 +268,260 @@ function slack_bug_data($user_id, $bug)
     # load (push) user language here as bug_data assumes current language
     lang_push(user_pref_get_language($user_id, $bug->project_id));
 
-    # Override current user with user to construct bug data for.
-    # This is to make sure that APIs that check against current user (e.g. relationship) work correctly.
-    $current_user_id = current_user_set($user_id);
+    try {
+        # Override current user with user to construct bug data for.
+        # This is to make sure that APIs that check against current user (e.g. relationship) work correctly.
+        $current_user_id = current_user_set($user_id);
 
-    $user_access_level = user_get_access_level($user_id, $bug->project_id);
-    $bug_view_fields = config_get('bug_view_page_fields', null, $user_id, $bug->project_id);
+        $user_access_level = user_get_access_level($user_id, $bug->project_id);
+        $bug_view_fields = config_get('bug_view_page_fields', null, $user_id, $bug->project_id);
 
-    $date_format = config_get('normal_date_format');
+        $date_format = config_get('normal_date_format');
 
-    $tags = array();
-    if (in_array('tags', $bug_view_fields) && access_compare_level($user_access_level, config_get('tag_view_threshold'))) {
-        $tag_rows = tag_bug_get_attached($bug->id);
-        foreach ($tag_rows as $tag) {
-            $tags[] = $tag['name'];
-        }
-    }
-
-    $is_different_projects = false;
-    $relationships = array();
-    $relationship_all = relationship_get_all($bug->id, $is_different_projects);
-    foreach ($relationship_all as $relationship) {
-        if ($bug->id == $relationship->src_bug_id) {
-            # root bug is in the source side, related bug in the destination side
-            $related_project_id = $relationship->dest_project_id;
-            $related_bug_id = $relationship->dest_bug_id;
-            $relationship_descr = relationship_get_description_src_side($relationship->type);
-        } else {
-            # root bug is in the dest side, related bug in the source side
-            $related_project_id = $relationship->src_project_id;
-            $related_bug_id = $relationship->src_bug_id;
-            $relationship_descr = relationship_get_description_dest_side($relationship->type);
-        }
-        # related bug not existing...
-        if (!bug_exists($related_bug_id)) {
-            continue;
-        }
-        # user can access to the related bug at least as a viewer
-        if (!access_has_bug_level(config_get('view_bug_threshold', null, null, $related_project_id), $related_bug_id)) {
-            continue;
-        }
-        $relationships[] = array(
-            'relationship' => $relationship_descr,
-            'id' => bug_format_id($related_bug_id),
-            'summary' => bug_get_field($related_bug_id, 'summary')
-        );
-    }
-
-    $reflection = new ReflectionFunction('history_localize_item');
-    $new_history_localize_item = $reflection->getParameters()[0]->getName() == "p_bug_id";
-    $history = array();
-    if (ON == config_get('history_default_visible') && access_compare_level($user_access_level, config_get('view_history_threshold'))) {
-        $history_raw_events = history_get_raw_events_array($bug->id, $user_id);
-        foreach ($history_raw_events as $t_raw_history_item) {
-            if ($new_history_localize_item) {
-                $t_localized_item = history_localize_item(
-                    $t_raw_history_item['bug_id'],
-                    $t_raw_history_item['field'],
-                    $t_raw_history_item['type'],
-                    $t_raw_history_item['old_value'],
-                    $t_raw_history_item['new_value'],
-                    false
-                );
-            } else {
-                $t_localized_item = history_localize_item(
-                    $t_raw_history_item['field'],
-                    $t_raw_history_item['type'],
-                    $t_raw_history_item['old_value'],
-                    $t_raw_history_item['new_value'],
-                    false
-                );
+        $tags = array();
+        if (in_array('tags', $bug_view_fields) && access_compare_level($user_access_level, config_get('tag_view_threshold'))) {
+            $tag_rows = tag_bug_get_attached($bug->id);
+            foreach ($tag_rows as $tag) {
+                $tags[] = $tag['name'];
             }
-            $history[] = array(
-                'date' => date($date_format, $t_raw_history_item['date']),
-                'username' => $t_raw_history_item['username'],
-                'note' => $t_localized_item['note'],
-                'change' => $t_localized_item['change'],
+        }
+
+        $is_different_projects = false;
+        $relationships = array();
+        $relationship_all = relationship_get_all($bug->id, $is_different_projects);
+        foreach ($relationship_all as $relationship) {
+            if ($bug->id == $relationship->src_bug_id) {
+                # root bug is in the source side, related bug in the destination side
+                $related_project_id = $relationship->dest_project_id;
+                $related_bug_id = $relationship->dest_bug_id;
+                $relationship_descr = relationship_get_description_src_side($relationship->type);
+            } else {
+                # root bug is in the dest side, related bug in the source side
+                $related_project_id = $relationship->src_project_id;
+                $related_bug_id = $relationship->src_bug_id;
+                $relationship_descr = relationship_get_description_dest_side($relationship->type);
+            }
+            # related bug not existing...
+            if (!bug_exists($related_bug_id)) {
+                continue;
+            }
+            # user can access to the related bug at least as a viewer
+            if (!access_has_bug_level(config_get('view_bug_threshold', null, null, $related_project_id), $related_bug_id)) {
+                continue;
+            }
+            $relationships[] = array(
+                'relationship' => $relationship_descr,
+                'id' => bug_format_id($related_bug_id),
+                'summary' => bug_get_field($related_bug_id, 'summary')
             );
         }
-    }
 
-    $custom_fields = array();
-    $t_custom_fields = custom_field_get_linked_fields($bug->id, $user_access_level);
-    foreach ($t_custom_fields as $custom_field_name => $custom_field_data) {
-        $custom_fields[] = array(
-            'field' => lang_get_defaulted($custom_field_name),
-            'value' => string_custom_field_value_for_email($custom_field_data['value'], $custom_field_data['type']),
+        $reflection = new ReflectionFunction('history_localize_item');
+        $new_history_localize_item = $reflection->getParameters()[0]->getName() == "p_bug_id";
+        $history = array();
+        if (ON == config_get('history_default_visible') && access_compare_level($user_access_level, config_get('view_history_threshold'))) {
+            $history_raw_events = history_get_raw_events_array($bug->id, $user_id);
+            foreach ($history_raw_events as $t_raw_history_item) {
+                if ($new_history_localize_item) {
+                    $t_localized_item = history_localize_item(
+                        $t_raw_history_item['bug_id'],
+                        $t_raw_history_item['field'],
+                        $t_raw_history_item['type'],
+                        $t_raw_history_item['old_value'],
+                        $t_raw_history_item['new_value'],
+                        false
+                    );
+                } else {
+                    $t_localized_item = history_localize_item(
+                        $t_raw_history_item['field'],
+                        $t_raw_history_item['type'],
+                        $t_raw_history_item['old_value'],
+                        $t_raw_history_item['new_value'],
+                        false
+                    );
+                }
+                $history[] = array(
+                    'date' => date($date_format, $t_raw_history_item['date']),
+                    'username' => $t_raw_history_item['username'],
+                    'note' => $t_localized_item['note'],
+                    'change' => $t_localized_item['change'],
+                );
+            }
+        }
+
+        $custom_fields = array();
+        $t_custom_fields = custom_field_get_linked_fields($bug->id, $user_access_level);
+        foreach ($t_custom_fields as $custom_field_name => $custom_field_data) {
+            $custom_fields[] = array(
+                'field' => lang_get_defaulted($custom_field_name),
+                'value' => string_custom_field_value_for_email($custom_field_data['value'], $custom_field_data['type']),
+            );
+        }
+        // Discover custom fields.
+        /*
+        $t_related_custom_field_ids = custom_field_get_linked_ids( $bug->project_id );
+        foreach ( $t_related_custom_field_ids as $t_id ) {
+            $t_def = custom_field_get_definition( $t_id );
+            $params['custom_' . $t_def['name']] = custom_field_get_value( $t_id, $bug->id );
+        }
+        */
+
+        # access_compare_level( $user_access_level, config_get( 'view_handler_threshold' ) )
+        # access_compare_level( $user_access_level, config_get( 'due_date_view_threshold' ) )
+        # in_array( 'status', $bug_view_fields )
+        # in_array( 'severity', $bug_view_fields )
+        # in_array( 'priority', $bug_view_fields )
+        # in_array( 'reproducibility', $bug_view_fields )
+        # in_array( 'resolution', $bug_view_fields )
+        # in_array( 'target_version', $bug_view_fields ) && access_compare_level( $user_access_level, config_get( 'roadmap_view_threshold' ) )
+        # in_array( 'additional_info', $bug_view_fields )
+        # in_array( 'steps_to_reproduce', $bug_view_fields )
+        $bug_data = array(
+            'url' => array(
+                'field' => 'URL',
+                'value' => string_get_bug_view_url_with_fqdn($bug->id),
+            ),
+            'id' => array(
+                'field' => lang_get('issue_id'),
+                'value' => bug_format_id($bug->id),
+            ),
+            'reporter' => array(
+                'field' => lang_get('reporter'),
+                'value' => user_get_name($bug->reporter_id),
+            ),
+            'handler' => array(
+                'field' => lang_get('email_handler'),
+                'value' => empty($bug->handler_id) ? plugin_lang_get('no_user') : user_get_name($bug->handler_id),
+            ),
+            'project' => array(
+                'field' => lang_get('email_project'),
+                'value' => project_get_name($bug->project_id),
+            ),
+            'category' => array(
+                'field' => lang_get('category'),
+                'value' => category_full_name($bug->category_id, false),
+            ),
+            'reproducibility' => array(
+                'field' => lang_get('reproducibility'),
+                'value' => get_enum_element('reproducibility', $bug->reproducibility),
+            ),
+            'severity' => array(
+                'field' => lang_get('severity'),
+                'value' => get_enum_element('severity', $bug->severity),
+            ),
+            'priority' => array(
+                'field' => lang_get('priority'),
+                'value' => get_enum_element('priority', $bug->priority),
+            ),
+            'status' => array(
+                'field' => lang_get('status'),
+                'value' => get_enum_element('status', $bug->status),
+            ),
+            'resolution' => array(
+                'field' => lang_get('resolution'),
+                'value' => get_enum_element('resolution', $bug->resolution),
+            ),
+            'fixed_in_version' => array(
+                'field' => lang_get('fixed_in_version'),
+                'value' => $bug->fixed_in_version,
+            ),
+            'target_version' => array(
+                'field' => lang_get('target_version'),
+                'value' => $bug->target_version,
+            ),
+            'date_submitted' => array(
+                'field' => lang_get('date_submitted'),
+                'value' => date($date_format, $bug->date_submitted),
+            ),
+            'last_update' => array(
+                'field' => lang_get('last_update'),
+                'value' => date($date_format, $bug->last_updated),
+            ),
+            'due_date' => array(
+                'field' => lang_get('due_date'),
+                'value' => date_is_null($bug->due_date) ? '' : date($date_format, $bug->due_date),
+            ),
+            'summary' => array(
+                'field' => lang_get('summary'),
+                'value' => slack_format_text($bug->summary),
+            ),
+            'description' => array(
+                'field' => lang_get('description'),
+                'value' => slack_format_text($bug->description),
+            ),
+            'additional_information' => array(
+                'field' => lang_get('additional_information'),
+                'value' => slack_format_text($bug->additional_information),
+            ),
+            'steps_to_reproduce' => array(
+                'field' => lang_get('steps_to_reproduce'),
+                'value' => slack_format_text($bug->steps_to_reproduce),
+            ),
+            'tag' => array(
+                'field' => lang_get('tags'),
+                'values' => $tags,
+            ),
+            'relationships' => array(
+                'fields' => array(
+                    'relationship' => lang_get('bug_relationships'),
+                    'id' => lang_get('issue_id'),
+                    'summary' => lang_get('summary'),
+                ),
+                'values' => $relationships,
+            ),
+            'history' => array(
+                'title' => lang_get('bug_history'),
+                'fields' => array(
+                    'date' => lang_get('date_modified'),
+                    'username' => lang_get('username'),
+                    'note' => lang_get('field'),
+                    'change' => lang_get('change'),
+                ),
+                'values' => $history,
+            ),
+            'projection' => array(
+                'field' => lang_get('projection'),
+                'value' => get_enum_element('projection', $bug->projection),
+            ),
+            'eta' => array(
+                'field' => lang_get('eta'),
+                'value' => get_enum_element('eta', $bug->eta),
+            ),
+            'version' => array(
+                'field' => lang_get('version'),
+                'value' => $bug->version,
+            ),
+            'build' => array(
+                'field' => lang_get('build'),
+                'value' => $bug->build,
+            ),
+            'duplicate_id' => array(
+                'field' => lang_get('duplicate_id'),
+                'value' => bug_format_id($bug->duplicate_id),
+            ),
+            'view_state' => array(
+                'field' => lang_get('view_status'),
+                'value' => $bug->view_state == VS_PRIVATE ? lang_get('private') : lang_get('public'),
+            ),
+            'os' => array(
+                'field' => lang_get('os'),
+                'value' => $bug->os,
+            ),
+            'platform' => array(
+                'field' => lang_get('platform'),
+                'value' => $bug->platform,
+            ),
+            'os_build' => array(
+                'field' => lang_get('os_build'),
+                'value' => $bug->os_build,
+            ),
+            'custom_fields' => $custom_fields,
         );
+
+        current_user_set($current_user_id);
+    } finally {
+        lang_pop();
     }
-    // Discover custom fields.
-    /*
-    $t_related_custom_field_ids = custom_field_get_linked_ids( $bug->project_id );
-    foreach ( $t_related_custom_field_ids as $t_id ) {
-        $t_def = custom_field_get_definition( $t_id );
-        $params['custom_' . $t_def['name']] = custom_field_get_value( $t_id, $bug->id );
-    }
-    */
-
-    # access_compare_level( $user_access_level, config_get( 'view_handler_threshold' ) )
-    # access_compare_level( $user_access_level, config_get( 'due_date_view_threshold' ) )
-    # in_array( 'status', $bug_view_fields )
-    # in_array( 'severity', $bug_view_fields )
-    # in_array( 'priority', $bug_view_fields )
-    # in_array( 'reproducibility', $bug_view_fields )
-    # in_array( 'resolution', $bug_view_fields )
-    # in_array( 'target_version', $bug_view_fields ) && access_compare_level( $user_access_level, config_get( 'roadmap_view_threshold' ) )
-    # in_array( 'additional_info', $bug_view_fields )
-    # in_array( 'steps_to_reproduce', $bug_view_fields )
-    $bug_data = array(
-        'url' => array(
-            'field' => 'URL',
-            'value' => string_get_bug_view_url_with_fqdn($bug->id),
-        ),
-        'id' => array(
-            'field' => lang_get('issue_id'),
-            'value' => bug_format_id($bug->id),
-        ),
-        'reporter' => array(
-            'field' => lang_get('reporter'),
-            'value' => user_get_name($bug->reporter_id),
-        ),
-        'handler' => array(
-            'field' => lang_get('email_handler'),
-            'value' => empty($bug->handler_id) ? plugin_lang_get('no_user') : user_get_name($bug->handler_id),
-        ),
-        'project' => array(
-            'field' => lang_get('email_project'),
-            'value' => project_get_name($bug->project_id),
-        ),
-        'category' => array(
-            'field' => lang_get('category'),
-            'value' => category_full_name($bug->category_id, false),
-        ),
-        'reproducibility' => array(
-            'field' => lang_get('reproducibility'),
-            'value' => get_enum_element('reproducibility', $bug->reproducibility),
-        ),
-        'severity' => array(
-            'field' => lang_get('severity'),
-            'value' => get_enum_element('severity', $bug->severity),
-        ),
-        'priority' => array(
-            'field' => lang_get('priority'),
-            'value' => get_enum_element('priority', $bug->priority),
-        ),
-        'status' => array(
-            'field' => lang_get('status'),
-            'value' => get_enum_element('status', $bug->status),
-        ),
-        'resolution' => array(
-            'field' => lang_get('resolution'),
-            'value' => get_enum_element('resolution', $bug->resolution),
-        ),
-        'fixed_in_version' => array(
-            'field' => lang_get('fixed_in_version'),
-            'value' => $bug->fixed_in_version,
-        ),
-        'target_version' => array(
-            'field' => lang_get('target_version'),
-            'value' => $bug->target_version,
-        ),
-        'date_submitted' => array(
-            'field' => lang_get('date_submitted'),
-            'value' => date($date_format, $bug->date_submitted),
-        ),
-        'last_update' => array(
-            'field' => lang_get('last_update'),
-            'value' => date($date_format, $bug->last_updated),
-        ),
-        'due_date' => array(
-            'field' => lang_get('due_date'),
-            'value' => date_is_null($bug->due_date) ? '' : date($date_format, $bug->due_date),
-        ),
-        'summary' => array(
-            'field' => lang_get('summary'),
-            'value' => slack_format_text($bug->summary),
-        ),
-        'description' => array(
-            'field' => lang_get('description'),
-            'value' => slack_format_text($bug->description),
-        ),
-        'additional_information' => array(
-            'field' => lang_get('additional_information'),
-            'value' => slack_format_text($bug->additional_information),
-        ),
-        'steps_to_reproduce' => array(
-            'field' => lang_get('steps_to_reproduce'),
-            'value' => slack_format_text($bug->steps_to_reproduce),
-        ),
-        'tag' => array(
-            'field' => lang_get('tags'),
-            'values' => $tags,
-        ),
-        'relationships' => array(
-            'fields' => array(
-                'relationship' => lang_get('bug_relationships'),
-                'id' => lang_get('issue_id'),
-                'summary' => lang_get('summary'),
-            ),
-            'values' => $relationships,
-        ),
-        'history' => array(
-            'title' => lang_get('bug_history'),
-            'fields' => array(
-                'date' => lang_get('date_modified'),
-                'username' => lang_get('username'),
-                'note' => lang_get('field'),
-                'change' => lang_get('change'),
-            ),
-            'values' => $history,
-        ),
-        'projection' => array(
-            'field' => lang_get('projection'),
-            'value' => get_enum_element('projection', $bug->projection),
-        ),
-        'eta' => array(
-            'field' => lang_get('eta'),
-            'value' => get_enum_element('eta', $bug->eta),
-        ),
-        'version' => array(
-            'field' => lang_get('version'),
-            'value' => $bug->version,
-        ),
-        'build' => array(
-            'field' => lang_get('build'),
-            'value' => $bug->build,
-        ),
-        'duplicate_id' => array(
-            'field' => lang_get('duplicate_id'),
-            'value' => bug_format_id($bug->duplicate_id),
-        ),
-        'view_state' => array(
-            'field' => lang_get('view_status'),
-            'value' => $bug->view_state == VS_PRIVATE ? lang_get('private') : lang_get('public'),
-        ),
-        'os' => array(
-            'field' => lang_get('os'),
-            'value' => $bug->os,
-        ),
-        'platform' => array(
-            'field' => lang_get('platform'),
-            'value' => $bug->platform,
-        ),
-        'os_build' => array(
-            'field' => lang_get('os_build'),
-            'value' => $bug->os_build,
-        ),
-        'custom_fields' => $custom_fields,
-    );
-
-    current_user_set($current_user_id);
-
-    lang_pop();
 
     return $bug_data;
 }
@@ -531,75 +533,77 @@ function slack_bugnote_data($user_id, $bugnote, $files = array())
     # load (push) user language here as bug_data assumes current language
     lang_push(user_pref_get_language($user_id, $project_id));
 
-    # Override current user with user to construct bug data for.
-    # This is to make sure that APIs that check against current user (e.g. relationship) work correctly.
-    $current_user_id = current_user_set($user_id);
+    try {
+        # Override current user with user to construct bug data for.
+        # This is to make sure that APIs that check against current user (e.g. relationship) work correctly.
+        $current_user_id = current_user_set($user_id);
 
-    $view_attachments_threshold = config_get('view_attachments_threshold');
-    $size_unit = lang_get('bytes');
-    $attached = array();
-    if (count($files) > 0 && access_has_bug_level($view_attachments_threshold, $bugnote->bug_id, $user_id)) {
-        foreach ($files as $file) {
-            $name = $file['name'];
-            $size = $file['size'];
-            $attached[] = array(
-                'name' => $name,
-                'size' => $size,
-                'size_unit' => $size_unit,
-            );
+        $view_attachments_threshold = config_get('view_attachments_threshold');
+        $size_unit = lang_get('bytes');
+        $attached = array();
+        if (count($files) > 0 && access_has_bug_level($view_attachments_threshold, $bugnote->bug_id, $user_id)) {
+            foreach ($files as $file) {
+                $name = $file['name'];
+                $size = $file['size'];
+                $attached[] = array(
+                    'name' => $name,
+                    'size' => $size,
+                    'size_unit' => $size_unit,
+                );
+            }
         }
+
+        # $time_tracking_access_threshold = config_get( 'time_tracking_view_threshold' );
+        # access_has_bug_level( $time_tracking_access_threshold, $bugnote->bug_id, $user_id );
+        $bugnote_data = array(
+            'id' => array(
+                'field' => lang_get('id'),
+                'value' => bugnote_format_id($bugnote->id),
+            ),
+            'reporter' => array(
+                'field' => lang_get('note_user_id'),
+                'value' => user_get_name($bugnote->reporter_id),
+            ),
+            'access_level' => array(
+                'field' => lang_get('access_level_project'),
+                'value' => user_exists($bugnote->reporter_id)
+                    ? access_level_get_string(access_get_project_level($project_id, $bugnote->reporter_id))
+                    : '',
+            ),
+            'last_modified' => array(
+                'field' => lang_get('email_last_modified'),
+                'value' => date(config_get('normal_date_format'), $bugnote->last_modified),
+            ),
+            'url' => array(
+                'field' => 'URL',
+                'value' => string_process_bugnote_link(config_get('bugnote_link_tag') . $bugnote->id, false, false, true),
+            ),
+            'view_state' => array(
+                'field' => lang_get('bugnote_view_state'),
+                'value' => $bugnote->view_state == VS_PRIVATE
+                    ? lang_get('private')
+                    : lang_get('public'),
+            ),
+            'time_tracking' => array(
+                'field' => lang_get('time_tracking'),
+                'value' => $bugnote->time_tracking > 0
+                    ? db_minutes_to_hhmm($bugnote->time_tracking)
+                    : '',
+            ),
+            'note' => array(
+                'field' => lang_get('bugnote'),
+                'value' => slack_format_text($bugnote->note),
+            ),
+            'files' => array(
+                'field' => lang_get('bugnote_attached_files'),
+                'values' => $attached,
+            ),
+        );
+
+        current_user_set($current_user_id);
+    } finally {
+        lang_pop();
     }
-
-    # $time_tracking_access_threshold = config_get( 'time_tracking_view_threshold' );
-    # access_has_bug_level( $time_tracking_access_threshold, $bugnote->bug_id, $user_id );
-    $bugnote_data = array(
-        'id' => array(
-            'field' => lang_get('id'),
-            'value' => bugnote_format_id($bugnote->id),
-        ),
-        'reporter' => array(
-            'field' => lang_get('note_user_id'),
-            'value' => user_get_name($bugnote->reporter_id),
-        ),
-        'access_level' => array(
-            'field' => lang_get('access_level_project'),
-            'value' => user_exists($bugnote->reporter_id)
-                ? access_level_get_string(access_get_project_level($project_id, $bugnote->reporter_id))
-                : '',
-        ),
-        'last_modified' => array(
-            'field' => lang_get('email_last_modified'),
-            'value' => date(config_get('normal_date_format'), $bugnote->last_modified),
-        ),
-        'url' => array(
-            'field' => 'URL',
-            'value' => string_process_bugnote_link(config_get('bugnote_link_tag') . $bugnote->id, false, false, true),
-        ),
-        'view_state' => array(
-            'field' => lang_get('bugnote_view_state'),
-            'value' => $bugnote->view_state == VS_PRIVATE
-                ? lang_get('private')
-                : lang_get('public'),
-        ),
-        'time_tracking' => array(
-            'field' => lang_get('time_tracking'),
-            'value' => $bugnote->time_tracking > 0
-                ? db_minutes_to_hhmm($bugnote->time_tracking)
-                : '',
-        ),
-        'note' => array(
-            'field' => lang_get('bugnote'),
-            'value' => slack_format_text($bugnote->note),
-        ),
-        'files' => array(
-            'field' => lang_get('bugnote_attached_files'),
-            'values' => $attached,
-        ),
-    );
-
-    current_user_set($current_user_id);
-
-    lang_pop();
 
     return $bugnote_data;
 }
@@ -621,6 +625,9 @@ function slack_post($url, $payload)
     $response = curl_exec($ch);
     if ($response) {
         $result = json_decode($response, true);
+        if ($result === null) {
+            $result = array('ok' => false, 'error' => 'json decode error: ' . json_last_error_msg());
+        }
     } else {
         $result = array('ok' => false, 'error' => curl_errno($ch) . ': ' . curl_error($ch));
     }
@@ -639,9 +646,11 @@ function slack_notify($slack_user, $text, $url = null)
     );
     $url = $url ? $url : slack_get_webhook();
     $result = slack_post($url, $payload);
-    while ($result['ok'] == false && $result['error'] == "ratelimited") {
+    $retry = 0;
+    while ($result['ok'] == false && $result['error'] == "ratelimited" && $retry < 3) {
         usleep(0.1 * 1000 * 1000);
         $result = slack_post($url, $payload);
+        $retry++;
     }
     return $result;
 }

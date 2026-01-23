@@ -55,7 +55,7 @@ function checkbox_attr($field, $default)
 {
     global $user_id;
     $value = slack_config_get_field($user_id, $field);
-    if ($value == null) {
+    if ($value === null) {
         $value = $default;
     }
     return $value ? "checked" : "";
